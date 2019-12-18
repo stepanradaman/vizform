@@ -1,0 +1,62 @@
+dim line as Container = Scene.FindContainer("line")
+dim lineid as String = IntToString(line.Geometry.VizId,1)
+
+dim polygon as Container = Scene.FindContainer("polygon")
+dim polygonid as String = IntToString(polygon.Geometry.VizId,1)
+
+dim dots as Container = Scene.FindContainer("dots")
+dim dot as Container = Scene.FindContainer("dot")
+dim dotid as String = IntToString(dot.Geometry.VizId,1)
+
+sub OnInitParameters()
+	RegisterParameterDouble("width", "Width", 10.0, 0.0, 100.0)
+	RegisterParameterDouble("size", "Size", 20.0, 0.0, 100.0)
+	RegisterPushButton("clear", "Clear", 1)	
+end sub
+
+dim memory2 as Array[String]
+dim memory2string as String
+
+System.SendCommand("0 RENDERER*TREE*@line*GEOM*#"&lineid&"*clearAll INVOKE")
+System.SendCommand("0 RENDERER*TREE*@line*GEOM*#"&lineid&"*newLine INVOKE")
+System.SendCommand("0 RENDERER*TREE*@polygon*GEOM*#"&polygonid&"*POLYGONSTORAGE SET 0 0")
+
+sub OnExecAction(buttonId as Integer)
+	System.SendCommand("0 RENDERER*TREE*@line*GEOM*#"&lineid&"*clearAll INVOKE")
+	System.SendCommand("0 RENDERER*TREE*@line*GEOM*#"&lineid&"*newLine INVOKE")
+	memory2.Clear()
+	System.SendCommand("0 RENDERER*TREE*@polygon*GEOM*#"&polygonid&"*POLYGONSTORAGE SET 0 0")
+	dot.position.x = 0
+	dot.position.y = 0
+	dots.DeleteChildren()
+end sub
+
+sub OnButtonDown6DOF(button As Integer, pos As Vertex, rot As Vertex)
+	System.SendCommand("0 RENDERER*TREE*@line*GEOM*#"&lineid&"*newLine INVOKE")
+
+	dim x as Double = GetParameterDouble("width")
+	dim y as String = DoubleToString(x,1)
+	dim n as Double = GetParameterDouble("size")
+	dim m as String = DoubleToString(n,1)
+	
+	dim memory1 as Array[String]
+		memory1.Push(DoubleToString(pos.x,1))
+		memory1.Push(DoubleToString(pos.y,1))
+	
+	dim join as String = memory1[0] & " " & memory1[1]
+
+	memory2.Push(join)
+	memory2string.join(memory2,": ")
+	println memory2string
+	
+	System.SendCommand("0 RENDERER*TREE*@line*GEOM*#"&lineid&"*Width SET "& y)
+	System.SendCommand("0 RENDERER*TREE*@line*GEOM*#"&lineid&"*PointValues SET "& memory2string)
+	System.SendCommand("0 RENDERER*TREE*@polygon*GEOM*#"&polygonid&"*POLYGONSTORAGE SET "& memory2string)
+	System.SendCommand("0 RENDERER*TREE*@dot*GEOM*#"&dotid&"*radius SET "& m)
+		
+	dot.position.x = pos.x
+	dot.position.y = pos.y
+	dot.Active = true
+	dot.CopyTo(dots, 3)
+	dot.Active = false
+end sub
